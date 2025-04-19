@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>게시글 작성</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+  <div class="community-board-container">
+
+    <!-- Header Section -->
+    <div class="community-header">
+      <h1 class="community-title">게시글 작성</h1>
+      <p class="community-subtitle">새로운 게시글을 작성해보세요</p>
+    </div>
+
+    <!-- 게시글 작성 폼 -->
+    <div class="post-form-container">
+      <form id="boardForm" class="post-form">
+        <div class="form-group">
+          <label for="title" class="form-label">제목</label>
+          <input type="text" name="title" id="title" class="form-input" required placeholder="게시글 제목을 입력하세요">
+        </div>
+        
+        <div class="form-group">
+          <label for="writer" class="form-label">작성자</label>
+          <input type="text" name="writer" id="writer" class="form-input" required placeholder="작성자를 입력하세요">
+        </div>
+        
+        <div class="form-group">
+          <label for="content" class="form-label">내용</label>
+          <textarea name="content" id="content" class="form-textarea" required placeholder="게시글 내용을 입력하세요"></textarea>
+        </div>
+
+        <div class="button-container">
+          <button type="submit" class="text-link-btn">게시글 등록</button>
+          <a href="/boardList" class="text-link-btn muted">취소</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('boardForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const formData = {
+        title: document.getElementById('title').value,
+        writer: document.getElementById('writer').value,
+        content: document.getElementById('content').value
+      };
+
+      fetch('/api/board', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert('게시글이 성공적으로 등록되었습니다.');
+        window.location.href = '/boardList';
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        alert('게시글 등록에 실패했습니다.');
+      });
+    });
+  </script>
+</body>
+</html>

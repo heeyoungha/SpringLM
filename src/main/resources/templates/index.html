@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Landing Page</title>
+
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<div id="contents">
+    <h1>Welcome <span th:text="${username}">Username</span>,</h1>
+    <h2>사담으로 연결되는 시간, Let's Sadam!</h2>
+
+    <div class="content-section">
+        <!-- 공통 네비게이션 불러오기 -->
+        <div th:replace="~{fragment/nav :: navigation}"></div>
+
+        <p>Explore various sections of the platform using the navigation menu above. You can find and interact with boards, view or create projects, check user profiles, and even find local cafes!</p>
+        <img class="index-img" th:src="@{/img/img.jpg}" alt="Landing Page Image">
+
+    </div>
+</div>
+
+</body>
+</html>

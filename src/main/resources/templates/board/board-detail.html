@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>게시글 상세</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="community-board-container">
+    <div id="boardMeta" th:data-board-id="${boardDto.id}"></div>
+    <!-- Header Section -->
+    <div class="community-header">
+      <h1 class="community-title">게시글 상세</h1>
+      <p class="community-subtitle">게시글 내용을 확인하고 댓글을 작성해보세요</p>
+    </div>
+
+    <!-- 게시글 상세 정보 -->
+    <div class="post-detail-container">
+      <div class="post-detail-header">
+        <h2 class="post-detail-title" th:text="${boardDto.title}"></h2>
+        <div class="post-detail-meta">
+          <div class="author-info">
+            <span th:text="${boardDto.writer}"></span>
+          </div>
+          <div class="date-info">
+            <span th:text="${#temporals.format(boardDto.createdDate, 'yyyy-MM-dd HH:mm')}"></span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="post-detail-content">
+        <p th:text="${boardDto.content}"></p>
+      </div>
+
+      <!-- 게시글 관리 버튼 -->
+      <div class="button-container">
+        <a th:href="@{'/board/edit/' + ${boardDto.id}}" class="text-link-btn">수정</a>
+        <button class="text-link-btn danger" th:onclick="'deleteBoard(' + ${boardDto.id} + ')'">삭제</button>
+        <a href="/boardList" class="text-link-btn muted">목록으로</a>
+      </div>
+    </div>
+
+    <!-- 댓글 섹션 -->
+    <div class="comments-section">
+      <h3 class="comments-title">댓글</h3>
+      
+      <!-- 댓글 목록 -->
+      <div class="comments-list">
+        <div th:if="${replyList != null and !replyList.isEmpty()}" th:each="reply : ${replyList}" class="comment-item">
+          <div class="comment-header">
+            <div class="comment-author">
+              <span th:text="${reply.user != null ? reply.user.username : '알 수 없음'}"></span>
+            </div>
+            <div class="comment-date" th:text="${reply.createdAt != null ? #temporals.format(reply.createdAt, 'yyyy-MM-dd HH:mm') : ''}"></div>
+          </div>
+          <div class="comment-content">
+            <span th:id="${reply.id}" th:text="${reply.content}"></span>
+          </div>
+          <div class="comment-actions">
+            <button class="text-link-btn" th:onclick="'editReply(' + ${reply.id} + ')'">수정</button>
+            <button class="text-link-btn danger" th:onclick="'deleteReply(' + ${reply.id} + ')'">삭제</button>
+          </div>
+        </div>
+        
+        <div th:if="${replyList == null or replyList.isEmpty()}" class="no-comments">
+          <p>아직 댓글이 없습니다. 첫 번째 댓글을 작성해보세요!</p>
+        </div>
+      </div>
+
+      <!-- 댓글 작성/수정 단일 폼 -->
+      <div class="comment-form-container">
+        <form id="replyForm" th:action="@{/board/{boardId}/reply (boardId=${boardDto.id})}" method="post" class="comment-form">
+          <input type="hidden" id="replyId" name="replyId" value="">
+          <div class="form-group">
+            <textarea name="content" id="content" class="comment-textarea" placeholder="댓글을 입력해주세요..." required></textarea>
+          </div>
+          <div class="button-container">
+            <button id="replySubmitBtn" type="submit" class="text-link-btn">댓글 등록</button>
+            <button id="cancelEditBtn" type="button" class="text-link-btn muted" style="display:none;" onclick="cancelEdit()">수정 취소</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 별도 수정 폼 제거 -->
+    </div>
+  </div>
+
+  <script>
+    let currentEditReplyId = null;
+
+    // 게시글 삭제
+    function deleteBoard(id) {
+        if(confirm('정말로 삭제하시겠습니까?')) {
+            fetch(`/board/${id}`, {
+                method: 'DELETE',
+            })
+                .then(response => {
+                    if(response.ok) {
+                        alert('삭제되었습니다.');
+                        window.location.href = '/boardList';
+                    } else {
+                        alert('삭제에 실패했습니다.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('오류가 발생했습니다.');
+                });
+        }
+    }
+
+    // 단일 폼 제출 처리 (등록/수정 분기)
+    document.getElementById('replyForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const boardId = document.getElementById('boardMeta').dataset.boardId;
+        const content = document.getElementById('content').value;
+        const replyId = document.getElementById('replyId').value;
+
+        if (!content || content.trim().length === 0) {
+            alert('내용을 입력해주세요.');
+            return;
+        }
+
+        if (replyId) {
+            // 수정
+            $.ajax({
+                type: 'PUT',
+                url: '/api/board/' + boardId + '/reply/' + replyId,
+                contentType: 'application/json',
+                dataType: 'text',
+                data: JSON.stringify({ content: content }),
+                success: function() { location.reload(); },
+                error: function(xhr, status, error) {
+                    alert('댓글 수정에 실패했습니다.');
+                }
+            });
+        } else {
+            // 등록 (기존 POST 엔드포인트 사용)
+            $.ajax({
+                type: 'POST',
+                url: '/api/board/' + boardId + '/reply',
+                contentType: 'application/json',
+                dataType: 'text',
+                data: JSON.stringify({ content: content }),
+                success: function() { location.reload(); },
+                error: function() { alert('댓글 등록에 실패했습니다.'); }
+            });
+        }
+    });
+
+    // 댓글 수정 버튼 → 단일 폼 편집 모드 전환
+    function editReply(replyId) {
+        const contentElement = document.getElementById(replyId);
+        if (!contentElement) return;
+
+        currentEditReplyId = String(replyId);
+        document.getElementById('replyId').value = String(replyId);
+        document.getElementById('content').value = contentElement.innerText;
+
+        const submitBtn = document.getElementById('replySubmitBtn');
+        const cancelBtn = document.getElementById('cancelEditBtn');
+        submitBtn.textContent = '수정 완료';
+        cancelBtn.style.display = '';
+
+        document.getElementById('content').focus({ preventScroll: false });
+    }
+
+    // 편집 취소 → 폼 초기화
+    function cancelEdit() {
+        currentEditReplyId = null;
+        document.getElementById('replyId').value = '';
+        document.getElementById('content').value = '';
+        const submitBtn = document.getElementById('replySubmitBtn');
+        const cancelBtn = document.getElementById('cancelEditBtn');
+        submitBtn.textContent = '댓글 등록';
+        cancelBtn.style.display = 'none';
+    }
+
+    // 댓글 삭제
+    function deleteReply(replyId) {
+        if (confirm('정말로 삭제하시겠습니까?')) {
+            const boardId = document.getElementById('boardMeta').dataset.boardId;
+            $.ajax({
+                url: '/board/' + boardId + '/reply/' + replyId,
+                method: 'DELETE',
+                success: function() { location.reload(); },
+                error: function() { alert('댓글 삭제에 실패했습니다.'); }
+            });
+        }
+    }
+  </script>
+</body>
+</html>
