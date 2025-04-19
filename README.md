@@ -33,17 +33,103 @@ java -cp src/main/java com.example.springlm.step1.simplehttpserver.SimpleHttpSer
 http://localhost:8080/simpleserver.html
 ```
 
-## 🚀 2단계 - 정적 페이지 제공 (Spring)
+## 🚀 2단계 -Spring 기반 게시판 시스템 구현 (웹 + REST API) ✅
 
-**목표:** Spring을 활용한 웹 서버 동작 이해 및 HTTP 요청/응답 처리 능력
+**목표:** Spring을 활용한 게시판 CRUD 및 검색/페이징 기능 구현
 
-**주요 구현 사항:**
-- `http://localhost:8080/index.html` 접근 가능
-- 정적 리소스(JS, CSS) 로딩
-- QueryString 파라미터 자동 매핑
-- Spring `@Controller` + `@RequestMapping` 활용
+**구현 완료 사항:**
+- **웹 + REST API 이중 구조**: 동일한 기능을 웹 페이지와 REST API 두 방식으로 제공
+- **게시글 CRUD**: 작성, 조회, 수정, 삭제 
+- **게시글 목록**: 페이징 처리 
+- **검색 기능**: 제목 부분검색 지원 
+- **정렬**: 기본 최신순 (id DESC)
+- **댓글 기능**: 게시글 상세에서 댓글 목록/등록/수정/삭제
+- **소프트 삭제**: 논리적 삭제로 데이터 보존
+- **시드 데이터**: 애플리케이션 시작 시 게시글 10건 자동 생성
+- **JPA Auditing**: 생성/수정 시간 자동 관리
+- **예외 처리**: 커스텀 예외 클래스로 일관된 오류 처리
 
+**REST API 특징:**
+- **RESTful 설계**: HTTP 메서드(GET, POST, PUT, DELETE) 적절한 사용
+- **JSON 통신**: 요청/응답 모두 JSON 형태로 처리
+- **상태 코드**: 적절한 HTTP 상태 코드 반환 (200, 201, 400, 404 등)
+- **리소스 중심**: `/api/board`, `/api/board/{id}` 등 명확한 리소스 URL
+- **페이징 지원**: API에서도 Pageable 파라미터로 페이징 처리
 
+**파일 구조:**
+```
+src/main/java/com/example/springlm/
+├── SpringLmApplication.java # 메인 애플리케이션
+├── board/
+│ ├── Board.java # 게시글 엔티티
+│ ├── BoardDto.java # 게시글 DTO
+│ ├── BoardRepository.java # 게시글 Repository
+│ ├── BoardService.java # 게시글 Service
+│ ├── BoardWebController.java # 웹 컨트롤러
+│ ├── BoardApiController.java # REST API 컨트롤러
+│ └── reply/
+│ ├── Reply.java # 댓글 엔티티
+│ ├── ReplyDto.java # 댓글 DTO
+│ ├── ReplyRepository.java # 댓글 Repository
+│ ├── ReplyService.java # 댓글 Service
+│ ├── ReplyWebController.java # 댓글 웹 컨트롤러
+│ └── ReplyApiController.java # 댓글 API 컨트롤러
+├── common/
+│ ├── BaseEntity.java # 공통 엔티티 (Auditing)
+│ ├── ServiceUtil.java # 공통 유틸리티
+│ └── exception/
+│ └── DomainException.java # 커스텀 예외
+├── config/
+│ └── BoardSeeder.java # 시드 데이터 생성
+└── user/
+├── User.java # 사용자 엔티티
+└── UserRepository.java # 사용자 Repository
+src/main/resources/
+├── application.properties # Spring 설정
+├── templates/
+│ └── board/
+│ ├── get-boardlist.html # 게시글 목록
+│ ├── create-board.html # 게시글 작성
+│ ├── edit.html # 게시글 수정
+│ └── board-detail.html # 게시글 상세 + 댓글
+└── static/
+└── css/
+└── common.css # 스타일시트
+```
+**실행 방법:**
+```bash
+# 애플리케이션 실행
+./gradlew bootRun
+
+# 또는 JAR 파일 실행
+./gradlew build
+java -jar build/libs/SpringLM-0.0.1-SNAPSHOT.jar
+
+# 브라우저에서 접속
+http://localhost:8080/boardList     # 게시판 목록
+http://localhost:8080/h2-console    # H2 데이터베이스 콘솔
+```
+
+**주요 기술 스택:**
+- Spring Boot 3.5.5 + Java 17
+- Spring Data JPA + Hibernate
+- Thymeleaf 템플릿 엔진
+- H2 Database (개발용)
+- Lombok (코드 간소화)
+- Gradle (빌드 도구)
+
+**API 엔드포인트:**
+```
+GET /boardList # 게시글 목록 (웹)
+GET /api/board # 게시글 목록 (API)
+POST /api/board # 게시글 작성
+GET /board/{id} # 게시글 상세
+PUT /board/edit/{id} # 게시글 수정
+DELETE /board/{id} # 게시글 삭제
+POST /api/board/{id}/reply # 댓글 작성
+PUT /api/board/{id}/reply/{rid} # 댓글 수정
+DELETE /board/{id}/reply/{rid} # 댓글 삭제
+```
 ## 🚀 3단계 - RESTful API 및 로그인 구현
 
 **목표:** 현대 웹 개발 핵심인 REST API 및 인증 기능 구현 능력
