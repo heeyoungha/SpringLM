@@ -18,13 +18,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import java.util.Date;
 import org.springframework.beans.factory.annotation.Value;
-import io.jsonwebtoken.security.Keys;
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import com.example.springlm.config.JwtUtil;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
 import jakarta.persistence.EntityManager;
@@ -40,15 +35,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     //DefaultOAuth2UserService OAuth2UserService의 구현체
 
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
     @PersistenceContext
     private EntityManager entityManager;
-
-    @Value("${jwt.expiration.ms:86400000}")
-    private long jwtExpirationMs;
-
-    @Value("${jwt.secret}")
-    private String jwtSecret;
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
@@ -132,17 +122,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-
-        return Jwts.builder()
-            .setSubject(user.getId().toString())
-            .claim("username", user.getUsername())
-            .claim("email", user.getEmail())
-            .claim("role", user.getRole())
-            .setIssuedAt(new Date())
-            .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
-            .signWith(key, SignatureAlgorithm.HS512)
-            .compact();
+        return jwtUtil.generateToken(user.getId(), user.getUsername(), user.getEmail(), user.getRole());
     }
 
     public static class CustomOAuth2User implements OAuth2User {

@@ -54,8 +54,10 @@
    return attribute.get("email").toString();
    
    // 수정 후: null-safe 처리
-   Object email = attribute.get("email");
-   return email != null ? email.toString() : null;
+   attribute.get("email");
+   return Optional.ofNullable(attribute.get("email"))
+            .map(Object::toString())
+            .orElse(null);
    ```
 
 ---

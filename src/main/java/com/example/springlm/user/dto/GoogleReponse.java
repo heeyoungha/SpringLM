@@ -1,14 +1,16 @@
 package com.example.springlm.user.dto;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 public class GoogleReponse implements OAuth2Response{
 
     private final Map<String, Object> attribute;
 
     public GoogleReponse(Map<String, Object> attribute) {
-
-        this.attribute = attribute;
+        this.attribute = Objects.requireNonNullElse(attribute, new HashMap<>());
     }
 
     @Override
@@ -19,19 +21,25 @@ public class GoogleReponse implements OAuth2Response{
 
     @Override
     public String getProviderId() {
-
-        return attribute.get("sub").toString();
+        attribute.get("sub");
+        return Optional.ofNullable(attribute.get("sub"))
+                .map(Object::toString)
+                .orElse(null);
     }
 
     @Override
     public String getEmail() {
-
-        return attribute.get("email").toString();
+        attribute.get("email");
+        return Optional.ofNullable(attribute.get("email"))
+                .map(Object::toString)
+                .orElse(null);
     }
 
     @Override
     public String getName() {
-
-        return attribute.get("name").toString();
+        attribute.get("name");
+        return Optional.ofNullable(attribute.get("name"))
+                .map(Object::toString)
+                .orElse(null);
     }
 }

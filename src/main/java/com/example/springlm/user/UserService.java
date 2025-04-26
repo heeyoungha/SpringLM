@@ -29,8 +29,8 @@ public class UserService {
                 .email(request.getEmail())
                 .pw(request.getPw())
                 .build();
-        userRepository.save(user);
-        return new UserResponse(user);
+        User savedUser = userRepository.save(user);  // save 반환값 사용
+        return new UserResponse(savedUser);
     }
 
     @Transactional
