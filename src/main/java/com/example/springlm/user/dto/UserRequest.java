@@ -1,4 +1,4 @@
-package com.example.study.user.dto;
+package com.example.springlm.user.dto;
 
 import lombok.Data;
 

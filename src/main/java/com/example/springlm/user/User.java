@@ -23,7 +23,7 @@ public class User extends BaseEntity {
     private String role;
     private String pw;
 
-    public void updateUser(com.example.study.user.dto.UserRequest.UpdateUserRequest request) {
+    public void updateUser(com.example.springlm.user.dto.UserRequest.UpdateUserRequest request) {
         this.pw = request.getPw();
         this.email = request.getEmail();
         this.username = request.getUsername();
