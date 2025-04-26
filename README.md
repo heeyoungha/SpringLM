@@ -7,7 +7,9 @@
   - 자동 적용: ./gradlew test 실행 시 application-test.yml이 자동 로드되어 테스트 프로파일 활성화
   - DB: H2 인메모리 데이터베이스 사용, 매 테스트마다 create-drop으로 스키마 초기화
   - JWT: 테스트 전용 시크릿 키 및 1시간 만료 시간 설정
+  - 테스트 격리: @DataJpaTest는 각 테스트마다 자동 트랜잭션 롤백으로 완전한 DB 상태 초기화
   - → 별도의 환경 구성 없이 테스트 실행만으로 일관된 환경에서 안정적으로 검증 가능
+  
 - **테스트 도구**
   - **JUnit 5 (Jupiter)**: 테스트 프레임워크
   - **Spring Boot Test**: `@SpringBootTest`, `@WebMvcTest`
@@ -62,13 +64,47 @@
 
 ---
 
-#### 2) Repository Layer 테스트 (Data Layer 안정성 검증)
-- **UserRepository 테스트**: `UserRepositoryTest.java`
-  - `@DataJpaTest` 어노테이션 활용
-  - 사용자 저장, 조회, 중복 이메일 검증
-  - 커스텀 쿼리 메소드(`findByEmail()`) 검증
+#### 2) Repository Layer 테스트 (Data Layer 안정성 검증) ✅ **구현 완료**
 
----
+- **UserRepository 테스트**: `UserRepositoryTest.java` (9개 테스트)
+  - `@DataJpaTest` 어노테이션 활용
+  - `@BeforeEach`로 공통 테스트 데이터 준비
+  - 사용자 저장, 조회, 수정, 삭제(Soft Delete) 검증
+  - 커스텀 쿼리 메소드(`findByEmail()`, `findByUsername()`) 검증
+  - 중복 이메일 저장 및 여러 사용자 관리 테스트
+
+- **BoardRepository 테스트**: `BoardRepositoryTest.java` (9개 테스트)
+  - 게시판 CRUD 기본 동작 검증
+  - 제목 검색 기능(`findByTitleContaining()`) 및 페이징 테스트
+  - H2 데이터베이스 대소문자 구분 특성 반영한 검색 테스트
+  - 게시판과 댓글 연관관계 검증
+  - Soft Delete 동작 확인
+
+- **ReplyRepository 테스트**: `ReplyRepositoryTest.java` (9개 테스트)
+  - 댓글 CRUD 기본 동작 검증
+  - 게시판-댓글, 사용자-댓글 연관관계 테스트
+  - Cascade 및 OrphanRemoval 동작 검증
+  - 댓글 내용 길이 제한(120자) 테스트
+  - 여러 댓글 관리 및 수정 기능 검증
+
+##### **🔧 Repository Layer 테스트 전략**
+
+1. **@BeforeEach 활용으로 테스트 효율성 향상**:
+   ```java
+   @BeforeEach
+   void setUp() {
+       // 공통 테스트 데이터를 한 번에 준비
+       testUser = userRepository.save(createTestUser());
+       testBoard = boardRepository.save(createTestBoard());
+   }
+   ```
+
+2. **실제 데이터베이스 동작 반영**:
+   - H2 데이터베이스의 대소문자 구분 특성을 고려한 검색 테스트
+   - JPA 연관관계, Cascade, OrphanRemoval 등의 실제 동작 검증
+
+**성과**: 총 27개 Repository 테스트 작성 → Data Layer 안정성 확보
+
 
 #### 3) Web Layer 테스트 (Controller & Security)
 - **LoginController 테스트**: `LoginControllerTest.java`
@@ -210,25 +246,36 @@ jacocoTestCoverageVerification {
 ### **✅ 현재 구현된 테스트들**
 
 - **🔐 JwtUtilTest**: JWT 토큰 생성/검증/파싱 로직 (11개 테스트)
-- **👤 UserServiceTest**: 사용자 CRUD 비즈니스 로직 (10개 테스트)  
+### **✅ 현재 구현된 테스트들**
+
+#### **🧪 Unit Test Layer (29개 테스트)**
+- **🔐 JwtUtilTest**: JWT 토큰 생성/검증/파싱 로직 (11개 테스트)
+- **👤 UserServiceTest**: 사용자 CRUD 비즈니스 로직 (10개 테스트)
 - **🌐 GoogleResponseTest**: OAuth2 응답 데이터 변환 (8개 테스트)
 
-**총 29개 테스트** 모두 통과 ✅
+#### **🗄️ Repository Layer (27개 테스트)**
+- **👤 UserRepositoryTest**: 사용자 데이터 접근 계층 (9개 테스트)
+- **📝 BoardRepositoryTest**: 게시판 데이터 접근 계층 (9개 테스트)
+- **💬 ReplyRepositoryTest**: 댓글 데이터 접근 계층 (9개 테스트)
 
+**총 56개 테스트** 모두 통과 ✅
 ### **🚀 테스트 실행 명령어**
 
 ```bash
 # 특정 테스트 클래스만 실행
 ./gradlew test --tests "JwtUtilTest"
-./gradlew test --tests "UserServiceTest" 
+./gradlew test --tests "UserServiceTest"
 ./gradlew test --tests "GoogleResponseTest"
+./gradlew test --tests "UserRepositoryTest"
+./gradlew test --tests "BoardRepositoryTest"
+./gradlew test --tests "ReplyRepositoryTest"
 
 # 모든 Unit Test 실행
 ./gradlew test --tests "*Test"
 
+# 모든 Repository Test 실행
+./gradlew test --tests "*RepositoryTest"
+
 # 테스트 프로파일로 애플리케이션 실행
 ./gradlew bootRunTest
 
-# 커버리지 검증 (최소 80% 체크)
-./gradlew jacocoTestCoverageVerification
-```
