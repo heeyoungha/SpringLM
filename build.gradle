@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.5'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'com.example'
@@ -45,8 +46,66 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'io.github.cdimascio:java-dotenv:5.2.2'
+    
+    // Test Dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'com.h2database:h2'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+// Jacoco 설정
+jacoco {
+    toolVersion = "0.8.8"
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.80
+            }
+        }
+    }
+}
+
+// 프로파일별 실행 태스크 추가
+tasks.register("bootRunTest") {
+    group = "application"
+    description = "Runs the Spring Boot application with the test profile"
+    doFirst {
+        tasks.bootRun.configure {
+            systemProperty("spring.profiles.active", "test")
+        }
+    }
+    finalizedBy("bootRun")
+}
+
+tasks.register("bootRunLocal") {
+    group = "application"
+    description = "Runs the Spring Boot application with the local profile"
+    doFirst {
+        tasks.bootRun.configure {
+            systemProperty("spring.profiles.active", "local")
+        }
+    }
+    finalizedBy("bootRun")
+}
+
+// 테스트 실행 시 프로파일 설정
+test {
+    systemProperty("spring.profiles.active", "test")
 }
