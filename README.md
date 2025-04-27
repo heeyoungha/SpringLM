@@ -106,18 +106,54 @@
 **성과**: 총 27개 Repository 테스트 작성 → Data Layer 안정성 확보
 
 
-#### 3) Web Layer 테스트 (Controller & Security)
-- **LoginController 테스트**: `LoginControllerTest.java`
-  - `@WebMvcTest` 활용
-  - 로그인 페이지 렌더링 테스트
-  - 인증된/비인증된 사용자 접근 제어 검증
-- **Security 설정 테스트**: `SecurityConfigTest.java`
-  - `@SpringBootTest` + `TestRestTemplate` 활용
-  - OAuth2 로그인 엔드포인트 접근 검증
-  - JWT 토큰 필터 동작 확인
-- **JwtAuthenticationFilter 테스트**: `JwtAuthenticationFilterTest.java`
+#### 3) Web Layer + Security / JWT 통합 검증 ✅ **구현 완료**
+
+**목적**: 운영 환경과 유사하게 Security, JWT 필터, Controller 연동 동작 검증
+**특징**: `@SpringBootTest` + `@AutoConfigureMockMvc` 사용, SecurityConfig와 JwtAuthenticationFilter 포함 → 실제 요청 흐름 검증
+
+- **SecurityConfig 테스트**: `SecurityConfigTest.java` (4개 테스트) ✅
+  - 공개/보호된 엔드포인트 접근 제어
+  - OAuth2 로그인 엔드포인트 접근 가능 여부
+
+- **JwtAuthenticationFilter 테스트**: `JwtAuthenticationFilterTest.java` (3개 테스트) ✅
   - 유효한 JWT → 인증 성공
   - 잘못된 JWT → 인증 실패
+  - JWT 토큰 없이 접근 시 인증 실패
+
+- **BoardApiController 테스트**: `BoardApiControllerTest.java` (2개 테스트) ✅
+  - 인증된 사용자 API 접근
+  - 비인증 사용자 API 접근 제한
+
+**장점**: 운영 환경과 거의 동일한 테스트 환경 재현, Security/Filter/Controller 통합 흐름 검증 가능
+
+##### **🔧 Web Layer 테스트 전략**
+
+1. **통합 테스트**:
+   ```java
+   @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+   @AutoConfigureMockMvc
+   @ActiveProfiles("test")
+   class SecurityConfigTest {
+       // SecurityConfig와 JwtAuthenticationFilter 포함 → 실제 요청 흐름 검증
+   }
+   ```
+
+2. **Security 테스트**:
+   ```java
+   @WithMockUser(username = "testuser", roles = "USER")
+   void authenticatedUserAccess() throws Exception {
+       // 인증된 사용자 시뮬레이션
+   }
+   ```
+
+3. **MockMvc를 통한 HTTP 테스트**:
+   ```java
+   mockMvc.perform(get("/boardList"))
+           .andExpect(status().isOk())
+           .andExpect(view().name("board/get-boardlist"));
+   ```
+
+**성과**: 총 9개 Web Layer 핵심 테스트 작성 → Security & Controller 안정성 확보
 
 ---
 
@@ -163,18 +199,35 @@
   - `spring.profiles.active: test` - 테스트 프로파일 활성화
   - `systemProperty("spring.profiles.active", "test")` - Gradle 테스트 태스크 설정
 
+#### **🌐 Spring Web & Security 테스트**
+- **Spring Security Test**:
+  - `@WithMockUser` - 인증된 사용자 시뮬레이션
+  - `@WithAnonymousUser` - 익명 사용자 시뮬레이션
+  - `@WithUserDetails` - 사용자 상세 정보 기반 인증
+- **Spring MVC Test**:
+  - `@AutoConfigureMockMvc` - MockMvc 자동 설정
+  - `MockMvc` - HTTP 요청/응답 테스트
+  - `MockMvcRequestBuilders` - HTTP 요청 빌더
+  - `MockMvcResultMatchers` - HTTP 응답 검증
+- **Spring Boot Test**:
+  - `@SpringBootTest(webEnvironment = RANDOM_PORT)` - 실제 서버 포트로 통합 테스트
+  - `@SpringBootTest(webEnvironment = MOCK)` - Mock 웹 환경으로 테스트
+
 #### **💾 테스트 데이터베이스**
 - **H2 Database**: 
   - `jdbc:h2:mem:testdb` - 인메모리 테스트 DB
   - `ddl-auto: create-drop` - 테스트 시작/종료 시 스키마 생성/삭제
   - `DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE` - 테스트 간 DB 연결 유지
   - `show-sql: false` - 테스트 로그 최소화
+- **Spring Data JPA Test**:
+  - `@DataJpaTest` - JPA 관련 Bean만 로드하여 빠른 테스트
+  - `@Transactional` - 자동 트랜잭션 롤백으로 테스트 격리
 
 #### **🔐 테스트 보안 설정**
 - **OAuth2 Test Configuration**: 
   - `test_google_client_id`, `test_google_client_secret` - 테스트용 더미 값
 - **JWT Test Configuration**: 
-  - `test_jwt_secret_key_for_testing_32_chars_minimum` - HS512 알고리즘용 64바이트 이상 키
+  - `test_jwt_secret_key_for_testing_64_chars_minimum_required_for_hs512_algorithm` - HS512 알고리즘용 64바이트 이상 키
   - `expiration: 3600000` - 테스트용 1시간 만료 시간
 - **Logging Configuration**: 
   - `root: WARN`, `com.example.springlm: INFO` - 테스트 로그 레벨 최적화
@@ -245,12 +298,9 @@ jacocoTestCoverageVerification {
 
 ### **✅ 현재 구현된 테스트들**
 
-- **🔐 JwtUtilTest**: JWT 토큰 생성/검증/파싱 로직 (11개 테스트)
-### **✅ 현재 구현된 테스트들**
-
 #### **🧪 Unit Test Layer (29개 테스트)**
 - **🔐 JwtUtilTest**: JWT 토큰 생성/검증/파싱 로직 (11개 테스트)
-- **👤 UserServiceTest**: 사용자 CRUD 비즈니스 로직 (10개 테스트)
+- **�� UserServiceTest**: 사용자 CRUD 비즈니스 로직 (10개 테스트)
 - **🌐 GoogleResponseTest**: OAuth2 응답 데이터 변환 (8개 테스트)
 
 #### **🗄️ Repository Layer (27개 테스트)**
@@ -258,7 +308,11 @@ jacocoTestCoverageVerification {
 - **📝 BoardRepositoryTest**: 게시판 데이터 접근 계층 (9개 테스트)
 - **💬 ReplyRepositoryTest**: 댓글 데이터 접근 계층 (9개 테스트)
 
-**총 56개 테스트** 모두 통과 ✅
+#### **🌐 Web Layer (9개 테스트)**
+- **🛡️ SecurityConfigTest**: 보안 설정 및 접근 제어 (4개 테스트)
+- **🔑 JwtAuthenticationFilterTest**: JWT 인증 필터 (3개 테스트)
+- **📝 BoardApiControllerTest**: 게시판 API 컨트롤러 (2개 테스트)
+
 ### **🚀 테스트 실행 명령어**
 
 ```bash
@@ -269,13 +323,26 @@ jacocoTestCoverageVerification {
 ./gradlew test --tests "UserRepositoryTest"
 ./gradlew test --tests "BoardRepositoryTest"
 ./gradlew test --tests "ReplyRepositoryTest"
+./gradlew test --tests "SecurityConfigTest"
+./gradlew test --tests "JwtAuthenticationFilterTest"
+./gradlew test --tests "BoardApiControllerTest"
 
-# 모든 Unit Test 실행
-./gradlew test --tests "*Test"
+# 레이어별 테스트 실행
+./gradlew test --tests "*Test"                    # 모든 Unit Test
+./gradlew test --tests "*RepositoryTest"          # 모든 Repository Test
+./gradlew test --tests "*ConfigTest"              # 모든 Config Test
+./gradlew test --tests "*FilterTest"              # 모든 Filter Test
+./gradlew test --tests "*ApiControllerTest"       # 모든 API Controller Test
 
-# 모든 Repository Test 실행
-./gradlew test --tests "*RepositoryTest"
+# 전체 테스트 실행
+./gradlew test                                     # 모든 테스트 실행
+./gradlew clean test                              # 클린 빌드 후 테스트
 
 # 테스트 프로파일로 애플리케이션 실행
 ./gradlew bootRunTest
 
+# 커버리지 리포트 생성
+./gradlew jacocoTestReport                        # 커버리지 리포트 생성
+./gradlew clean test jacocoTestReport            # 테스트 + 커버리지 리포트
+./gradlew jacocoTestCoverageVerification         # 커버리지 검증 (80% 이상)
+```
