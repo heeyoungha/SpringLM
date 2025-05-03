@@ -362,28 +362,6 @@ jacocoTestCoverageVerification {
 - **🌐 AuthenticationIntegrationTest**: API 통합 테스트 (6개 테스트)
 - **⚙️ EnvironmentConfigTest**: 환경변수 테스트 (3개 테스트)
 
-
-## 📋 TODO List
-
-### **🔧 Integration Test 보완 사항**
-
-1. **testFullCRUDFlow() 메서드의 삭제 후 테스트 보완** 🔄
-   - **현재 상태**: 404 응답으로 확인하고 있지만, 삭제 후 목록 조회 시 개수로 확인하는 테스트가 실패
-   - **문제**: Soft Delete 동작 문제 - @Where 어노테이션이 제대로 동작하지 않아 삭제된 게시판이 목록에서 제외되지 않음
-   - **해결 방안**:
-     - `BoardService.deleteBoard()`에서 `flush()` 호출 추가
-     - 또는 삭제 확인을 404 응답으로 변경 (현재 방식)
-
-2. **Soft Delete 동작 문제 해결** ⏳
-   - **문제**: @Where 어노테이션이 제대로 동작하지 않아 삭제된 게시판이 목록에서 제외되지 않음
-   - **해결 방안**: Hibernate 설정 확인 및 @Where 어노테이션 동작 검증
-
-### **📦 추가된 의존성**
-
-- **TestContainers**: 실제 DB(MySQL/PostgreSQL) 기반 통합 테스트
-- **MockWebServer**: Google OAuth2 API 모킹을 위한 HTTP 서버
-- **Spring Boot TestContainers**: Spring Boot와 TestContainers 통합
-
 ### **🚀 테스트 실행 명령어**
 
 ```bash

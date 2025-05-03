@@ -51,7 +51,18 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'
-}
+    
+    // TestContainers for Integration Tests
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:testcontainers'
+    
+    // MockWebServer for OAuth2 Integration Tests
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+    
+    // Additional test utilities
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'}
 
 tasks.named('test') {
     useJUnitPlatform()
