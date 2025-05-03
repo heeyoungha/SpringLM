@@ -1,6 +1,6 @@
-# 프로젝트 개발 단계별 정리
+# Spring 서비스 Loadmap 프로젝트
 
-## ✅ 1단계 - HTTP 서버 (순수 Java)
+## ✅ 1단계 - 간단한 HTTP 서버 구현 (순수 Java)
 - ServerSocket 기반 HTTP 서버 직접 구현  
 - 정적 파일 서비스 (HTML, CSS, JS) + QueryString 파싱  
 - 요청 라우팅 및 HTTP 상태코드(200, 404) 처리  
@@ -40,6 +40,13 @@
 ---
 
 ## 📝 TO DO LIST 
+
+### 데이터베이스 연동 (JPA + QueryDSL)
+
+- [ ] Spring Data JPA를 사용한 엔티티 CRUD  
+- [ ] QueryDSL을 활용하여 동적 검색, 조건부 조회, 복잡한 JOIN 쿼리 구현  
+- [ ] 트랜잭션 관리 (`@Transactional`)  
+- [ ] 환경별 DB 설정 (`application-dev.properties`, `application-prod.properties`)  
 
 ### 🔐 보안 처리
 
